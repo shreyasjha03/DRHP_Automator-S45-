@@ -1,0 +1,15 @@
+Date,From (Previous),To (Revised),Source Documents,Confidence,Details
+01/01/2015,N/A,"₹ 1,00,000",initial-BoardMeeting.md,MEDIUM,Derived from a single source document. | Missing fields: old_capital | Missing fields: old_capital
+01/01/2015,"₹ 1,00,000","₹ 1,00,000",initial-Certificate.md; initial-MOA.md,HIGH,"Shares: 10,000 shares @ ₹ 10 each → 10,000 shares @ ₹ 10 each | Multiple matching sources support this event."
+01/01/2015,N/A,"₹ 1,00,000",initial-SH7.md,MEDIUM,Derived from a single source document. | Missing fields: old_capital | Missing fields: old_capital
+10/11/2016,"₹ 1,00,000","₹ 2,00,000",2016-11-17_BoardMeeting.md,MEDIUM,"Shares: 10,000 shares @ ₹ 10 each → 20,000 shares @ ₹ 10 each | Derived from a single source document."
+15/07/2021,"₹ 2,00,000","₹ 3,00,000",2021-07-22_BoardMeeting.md,MEDIUM,"Shares: 20,000 shares @ ₹ 10 each → 20,000 shares @ ₹ 10 each | Derived from a single source document."
+17/11/2016,"₹ 1,00,000","₹ 2,00,000",2016-11-17_SH7.md; 2016-11-17_EGM.md,HIGH,"Shares: 10,000 shares @ ₹ 10 each → 20,000 shares @ ₹ 10 each | Multiple matching sources support this event."
+17/11/2016,"₹ 1,00,000","₹ 2,00,000",2016-11-17_MOA.md,MEDIUM,"Shares: 10,000 shares @ ₹ 10 each → 20,000 shares @ ₹ 10 each | Derived from a single source document."
+20/09/2025,"₹ 3,00,000","₹ 110,00,00,000",2025-09-29_BoardMeeting.md,MEDIUM,"Shares: 20,000 shares @ ₹ 10 each → 109,900,000 shares @ ₹ 10 each | Derived from a single source document."
+22/07/2021,"₹ 2,00,000","₹ 3,00,000",2021-07-22_EGM.md,MEDIUM,"Shares: 20,000 shares @ ₹ 10 each → 20,000 shares @ ₹ 10 each | Derived from a single source document."
+22/07/2021,"₹ 2,00,000","₹ 3,00,000",2021-07-22_MOA.md,MEDIUM,"Shares: 20,000 shares @ ₹ 10 each → 30,000 shares @ ₹ 10 each | Derived from a single source document."
+22/07/2021,"₹ 2,00,000","₹ 3,00,000",2021-07-22_SH7.md,MEDIUM,Derived from a single source document.
+29/09/2025,"₹ 3,00,000","₹ 110,00,00,000",2025-09-29_AGM.md,MEDIUM,"Shares: 30,000 shares @ ₹ 10 each → 1,099,000 shares @ ₹ 10 each | Derived from a single source document."
+29/09/2025,"₹ 3,00,000","₹ 110,00,00,000",2025-09-29_MOA.md,MEDIUM,"Shares: 20,000 shares @ ₹ 10 each → 109,900,000 shares @ ₹ 10 each | Derived from a single source document."
+29/09/2025,"₹ 3,00,000","₹ 110,00,00,000",2025-09-29_SH7.md,MEDIUM,"Shares: 30,000 shares @ ₹ 10 each → 10,990,000 shares @ ₹ 10 each | Derived from a single source document."

@@ -1,0 +1,4 @@
+pydantic
+pandas
+python-dotenv
+groq
