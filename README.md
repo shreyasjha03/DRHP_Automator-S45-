@@ -1,72 +1,183 @@
 # DRHP Capital Structure Extraction
 
-This repository contains a modular Python pipeline for extracting authorised share capital changes from Indian corporate filings and generating a DRHP-style capital structure summary.
+A modular pipeline for extracting authorised share capital changes from Indian corporate filings and generating a DRHP-style capital structure table.
 
-## What the project does
+The core constraint: **no single document is treated as ground truth — all outputs are traceable and verifiable across sources.**
 
-- Loads document files from `data/sample_docs`
-- Classifies each document into `SH7`, `PAS3`, `BOARD_RESOLUTION`, `EGM`, or `MOA`
-- Extracts structured authorised capital change data
-- Groups related documents into corporate events by date and event type
-- Merges values across sources, preserves provenance, and flags conflicts
-- Produces a clean CSV at `data/outputs/result.csv`
-- Produces detailed event analysis markdown at `data/outputs/CAPITAL_STRUCTURE.md`
+---
 
-## Why this approach
+## Problem Overview
 
-Corporate filings are rarely clean enough for a single document to be the entire truth. A DRHP drafting system should:
+A Draft Red Herring Prospectus (DRHP) requires a clear history of how a company's authorised share capital evolved over time. In practice, this information is scattered across multiple documents:
 
-- preserve source traceability
-- avoid hallucinating unconfirmed values
-- identify missing or conflicting evidence
-- merge supporting documents into a single event
+- SH-7 (official filing with ROC)
+- Board resolutions
+- EGM notices and resolutions
+- MOA amendments
 
-This pipeline is built around that idea.
+Each document contains only partial information. A reliable system must combine these into a single event, preserve source traceability, avoid hallucinating missing values, and flag conflicts explicitly.
 
-## Pipeline architecture
+---
 
-1. **Ingestion** - read markdown/text files from `data/sample_docs`
-2. **Classification** - use rule-based logic first, fallback to LLM if needed
-3. **Extraction** - use deterministic regex extraction for structured capital records, with Groq fallback for weaker documents
-4. **Event building** - group by `(date, event_type)` and merge multiple documents into one event
-5. **Validation** - track missing fields, detect conflicts, and assign confidence
-6. **Output** - write a structured CSV and a markdown event summary with exact source 
+## What This System Does
 
-## LLM backend
+The pipeline:
 
-This project now uses **Groq** as the primary LLM backend.
+- Loads corporate filing documents from `data/sample_docs`
+- Classifies each document (SH7, PAS3, BOARD_RESOLUTION, EGM, MOA)
+- Extracts structured capital change data
+- Groups related documents into events
+- Merges values across sources
+- Detects conflicts and missing fields
+- Assigns confidence scores
+- Generates DRHP-style output
 
-- The Groq client is configured in `app/utils/llm_client.py`
-- The default model is `llama-3.1-8b-instant`
-- The code uses deterministic extraction where possible and Groq only as a fallback
-- The pipeline is designed to survive unsupported model errors and missing responses
+---
 
-## Output files
+## Repository Structure
 
-- `data/outputs/result.csv` - structured table with columns:
-  - `Date`
-  - `From (Previous)`
-  - `To (Revised)`
-  - `Particulars of Change`
-  - `Source Documents`
-  - `Confidence`
-  - `Remarks`
-- `data/outputs/CAPITAL_STRUCTURE.md` - event-by-event analysis with source evidence
+```
+app/
+  ingestion/        # document loading
+  classification/   # document type detection
+  extraction/       # data extraction logic
+  processing/       # event building + validation
+  output/           # CSV + markdown generation
+  models/           # Pydantic schemas
+  utils/            # LLM client (Groq)
 
-## Sample dataset
+data/
+  sample_docs/      # input dataset
+  outputs/          # generated outputs
 
-The sample dataset includes 4 authorised share capital change events, each represented by multiple supporting files.
+PROMPTS_USED.md
+SYSTEM_DESIGN.md
+README.md
+requirements.txt
+```
 
-The dummy dataset intentionally includes edge cases such as:
+---
 
-- missing information in one or more supporting documents
-- conflicting values across attachments
-- preference share introductions
-- line-level evidence extraction where possible
+## Pipeline Flow
 
-## Running the pipeline
+1. **Ingestion** — Load `.txt` / `.md` documents from `data/sample_docs`
+2. **Classification** — Rule-based classification (keyword matching) with optional LLM fallback
+3. **Extraction** — Deterministic parsing (regex) for structured documents; LLM fallback (Groq) for weaker/unstructured documents
+4. **Event Building** — Group documents by `(date, event_type)` and merge into a single event
+5. **Validation** — Detect missing fields, detect conflicting values, assign confidence score
+6. **Output Generation** — Structured CSV (`result.csv`) and event-level markdown summary (`CAPITAL_STRUCTURE.md`)
 
-Create and activate a local virtual environment:
+---
+
+## Sample Dataset
+
+The dataset contains **4 authorised capital change events**, each supported by multiple documents:
+
+- 1 SH-7
+- 1 board resolution
+- 1 EGM-related document
+- 1 additional supporting file (MOA / notice)
+
+The dataset intentionally includes missing values, conflicting values across documents, and formatting variations to ensure the system handles real-world inconsistencies.
+
+---
+
+## Output Files
+
+### `data/outputs/result.csv`
+
+| Column | Description |
+|--------|-------------|
+| Date | Date of the capital change |
+| From (Previous) | Authorised capital before the change |
+| To (Revised) | Authorised capital after the change |
+| Particulars of Change | Share count and face value details |
+| Source Documents | Documents used to derive this event |
+| Confidence | HIGH / MEDIUM / LOW |
+| Remarks | Conflicts, missing fields, caveats |
+
+**Sample output (Apex Corporation Private Limited):**
+
+| Date | From | To | Confidence | Remarks |
+|------|------|----|------------|---------|
+| 01/01/2015 | Rs. 0 | Rs. 1,00,000 | HIGH | Three or more sources agree |
+| 17/11/2016 | Rs. 1,00,000 | Rs. 2,00,000 | HIGH | Three or more sources agree |
+| 15/07/2021 | Rs. 2,00,000 | Rs. 3,00,000 | MEDIUM | Single source only |
+| 22/07/2021 | Rs. 2,00,000 | Rs. 3,00,000 | LOW | Conflicting values detected |
+| 29/09/2025 | Rs. 3,00,000 | Rs. 110,00,00,000 | LOW | Conflicting values detected |
+
+> Note: Events on 15/07/2021 and 22/07/2021 represent the same capital change reported across documents with a date discrepancy. The system surfaces this as a conflict rather than silently merging or dropping either record.
+
+### `data/outputs/CAPITAL_STRUCTURE.md`
+
+Event-by-event breakdown with full source traceability. For each event:
+
+- old and new authorised capital
+- share count and face value
+- list of source documents with specific line references
+- confidence level with reasoning
+- conflicts and missing fields flagged explicitly
+
+**Example entry (Event 2 -- 17/11/2016):**
+
+```
+Old Authorised Capital: Rs. 1,00,000
+New Authorised Capital: Rs. 2,00,000
+Particulars: 10,000 shares @ Rs. 10 each -> 20,000 shares @ Rs. 10 each
+
+Source Documents:
+- 2016-11-17_BoardMeeting.md (lines 2, 7, 8, 9, 11, 12)
+- 2016-11-17_EGM.md
+- 2016-11-17_MOA.md (lines 16112016, 17112016)
+- 2016-11-17_SH7.md
+
+Confidence: HIGH
+Remarks: Three or more supporting sources agree on the event.
+```
+
+---
+
+## LLM Backend
+
+This system uses **Groq** as the LLM backend.
+
+- Model: `llama-3.1-8b-instant`
+- Used only when deterministic extraction is insufficient
+- The pipeline still runs without it (LLM fallback is optional)
+
+The system was initially built using Gemini but moved to Groq due to quota limitations, inconsistent JSON formatting, and model availability issues. Groq offers faster inference, more stable structured outputs, and simpler integration.
+
+---
+
+## Confidence Logic
+
+| Condition | Confidence |
+|-----------|------------|
+| Multiple sources agree | HIGH |
+| Single source only | MEDIUM |
+| Conflicting values | LOW |
+
+Confidence is reflected in both output files and is intended to guide human review. LOW confidence events should always be manually verified before inclusion in a final DRHP.
+
+---
+
+## Design Principles
+
+**Traceability first** — every output links back to its source documents with line-level references where available.
+
+**No hallucination** — missing values are never guessed; they are explicitly marked.
+
+**Event-centric design** — the system reconstructs events, not individual documents.
+
+**Deterministic + LLM hybrid** — use regex/code when structure exists; use LLM only when necessary.
+
+**Explicit conflict handling** — conflicting values are preserved and reflected in confidence scoring, not silently resolved.
+
+---
+
+## Setup & Run
+
+**1. Create environment**
 
 ```bash
 python3 -m venv .venv
@@ -74,38 +185,40 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Set your Groq key in `.env`:
+**2. Add API key (optional)**
 
-```bash
+```
 GROQ_API_KEY=your_api_key_here
 GROQ_MODEL=llama-3.1-8b-instant
 ```
 
-Run the pipeline:
+**3. Run pipeline**
 
 ```bash
 python3 app/main.py
 ```
 
-## Notes on file provenance
+If the API key is not set, the pipeline still runs with LLM fallback disabled.
 
-The pipeline now attempts to capture line-level provenance for deterministic extraction. The final CSV includes source document names and evidence line numbers when available.
+---
 
-## How to inspect the outputs
+## Limitations
 
-- `data/outputs/result.csv` is the structured table
-- `data/outputs/CAPITAL_STRUCTURE.md` is the event-based narrative with sources and confidence
+- Focused only on authorised share capital changes
+- Regex extraction assumes reasonably structured documents
+- No OCR support for scanned PDFs
+- Limited handling of complex financial edge cases
 
-## Troubleshooting
+---
 
-If `python3 app/main.py` fails due to missing dependencies, install them inside the virtual environment:
+## Future Improvements
 
-```bash
-pip install -r requirements.txt
-```
+- Unit tests for extraction and event builder
+- Normalize all dates to ISO format
+- Improve field-level provenance
+- Extend to issued / paid-up capital
+- Better handling of noisy or unstructured documents
 
-If `GROQ_API_KEY` is not set, the pipeline will still run but Groq fallback extraction will be disabled.
+---
 
-## Final note
-
-During development, the system was moved from Gemini to Groq to avoid quota limits and inconsistent structured output. The current implementation uses Groq for LLM-based extraction and deterministic parsing for documents that already contain explicit authorised capital language.
+This system was built to reflect how DRHP drafting actually works in practice -- not by trusting a single document, but by reconciling multiple sources into a consistent, traceable financial narrative.
