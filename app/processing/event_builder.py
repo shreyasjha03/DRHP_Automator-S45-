@@ -120,18 +120,37 @@ def _resolve_event_type(records) -> Optional[str]:
     return ranked[0][2]
 
 
+def _document_line_map(record):
+    lines_by_source = {}
+    for field_name in ["event_type", "date", "old_capital", "new_capital", "old_shares", "new_shares", "face_value_per_share"]:
+        extracted = getattr(record, field_name)
+        if getattr(extracted, "source_line", None) is not None:
+            source = record.source_file or "unknown"
+            lines_by_source.setdefault(source, set()).add(extracted.source_line)
+    return lines_by_source
+
+
 def build_event(records: List):
     if not records:
         raise ValueError("build_event requires at least one record")
 
     ordered_records = sorted(records, key=lambda record: (_priority(record), record.source_file or ""))
-    sources = []
+    source_lines = {}
     seen_sources = set()
     for record in ordered_records:
         source = record.source_file or "unknown"
-        if source not in seen_sources:
-            sources.append(source)
-            seen_sources.add(source)
+        if source not in source_lines:
+            source_lines[source] = set()
+        for source_name, lines in _document_line_map(record).items():
+            source_lines.setdefault(source_name, set()).update(lines)
+
+    sources = []
+    for source_name, lines in sorted(source_lines.items()):
+        if lines:
+            line_list = ", ".join(str(line) for line in sorted(lines))
+            sources.append(f"{source_name} (lines {line_list})")
+        else:
+            sources.append(source_name)
 
     conflicts = []
     final = {}
@@ -149,6 +168,7 @@ def build_event(records: List):
         new_capital=final["new_capital"],
         old_shares=final["old_shares"],
         new_shares=final["new_shares"],
+        face_value_per_share=final.get("face_value_per_share"),
         sources=sources,
         confidence="medium",
         missing_fields=[],

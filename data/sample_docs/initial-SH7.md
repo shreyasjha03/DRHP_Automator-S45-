@@ -5,6 +5,7 @@
 **Company:** Apex Corporation Private Limited
 **CIN:** U12345AB2020PTC123456
 **Filing Date:** 01/01/2015
+**Date of EGM:** 01/01/2015
 
 ## Memorandum of Association
 

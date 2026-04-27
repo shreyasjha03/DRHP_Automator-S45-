@@ -21,13 +21,13 @@ Use null for missing values.
 Extract authorised capital change:
 
 {
-  "event_type": {"value": "...", "evidence_text": "..."},
-  "date": {"value": "...", "evidence_text": "..."},
-  "old_capital": {"value": ..., "evidence_text": "..."},
-  "new_capital": {"value": ..., "evidence_text": "..."},
-  "old_shares": {"value": ..., "evidence_text": "..."},
-  "new_shares": {"value": ..., "evidence_text": "..."},
-  "face_value_per_share": {"value": ..., "evidence_text": "..."}
+  "event_type": {"value": "...", "evidence_text": "...", "source_line": ...},
+  "date": {"value": "...", "evidence_text": "...", "source_line": ...},
+  "old_capital": {"value": ..., "evidence_text": "...", "source_line": ...},
+  "new_capital": {"value": ..., "evidence_text": "...", "source_line": ...},
+  "old_shares": {"value": ..., "evidence_text": "...", "source_line": ...},
+  "new_shares": {"value": ..., "evidence_text": "...", "source_line": ...},
+  "face_value_per_share": {"value": ..., "evidence_text": "...", "source_line": ...}
 }
 
 If not present:

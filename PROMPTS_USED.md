@@ -1,159 +1,338 @@
+
+```md
 # Prompts Used
 
-This file captures the prompts and instructions used while building and debugging the assignment solution with coding assistance.
+This file documents the prompts I used while building the DRHP capital structure extraction system.  
+These were written over time while understanding the problem, building the pipeline, and debugging issues.
 
-The goal is to be transparent about how the code and dataset were produced.
+---
 
-## 1. Core Engineering Prompt
+## 1. Understanding the Problem
 
-Used to guide debugging and pipeline hardening:
-
-```text
-You are a senior Python engineer working on an AI pipeline.
-
-The project is a DRHP Capital Structure Extraction system.
-
-Current status:
-
-* Project structure is already created
-* Gemini LLM client is working
-* Environment setup is complete
-
-Your task:
-
-1. Debug and fix any issues in the pipeline
-2. Ensure the full pipeline runs end-to-end
-3. Improve robustness of extraction and parsing
-
-Focus on:
-
-### 1. LLM Client
-
-* Ensure Gemini response parsing is reliable
-* Handle invalid JSON safely
-* Add retry or fallback logic
-
-### 2. Extraction Layer
-
-* Validate extracted JSON using Pydantic
-* Handle missing/null fields correctly
-* Ensure no crashes on bad LLM output
-
-### 3. Event Builder
-
-* Properly group records by (date, event_type)
-* Merge multiple documents into one event
-* Detect conflicts in values
-* Prefer SH7 > PAS3 > others
-
-### 4. Validator
-
-* Assign confidence:
-
-  * high → multiple matching sources
-  * medium → single source
-  * low → conflicts
-* Track missing fields explicitly
-
-### 5. Output
-
-* Ensure final output is a clean pandas DataFrame
-* Save CSV to data/outputs/result.csv
-* Include:
-  Date, Old Capital, New Capital, Sources, Confidence, Notes
-
-### 6. Logging (IMPORTANT)
-
-Add debug logs for:
-
-* classification
-* extraction output
-* grouping
-* final events
-
-### 7. Fix main.py
-
-* Ensure pipeline runs correctly
-* No crashes even with bad input
-* Print final table clearly
-
-Constraints:
-
-* Do NOT rewrite the whole project
-* Modify only necessary parts
-* Keep code modular and clean
-* Avoid unnecessary abstractions
 ```
 
-## 2. Dataset Creation Prompt
+explain how authorised share capital works in india, like what exactly changes and what needs to be reported
 
-Used to generate the assignment-aligned sample dataset:
+also what is SH-7 vs PAS-3 im kinda confused between the two
 
-```text
-Create a dummy sample dataset consisting of 4 SH-7 documents, with 3 attachment
-documents for each SH-7, based on the structure of the provided SH-7 and PAS-3
-reference files.
+which one actually tells the real capital change?? like source of truth
 
-The sample data should represent authorised share capital changes over time for a
-single company and should be easy to parse by the pipeline.
+if i have multiple docs (sh7, egm, board resolution etc) how do i combine them into one final record
 
-Each event should include:
-- date
-- old authorised capital
-- new authorised capital
-- old number of shares
-- new number of shares
-- face value per share
+also what to do if some values are missing or dont match??
 
-Use realistic filing-style language similar to SH-7, board resolutions, EGM notices,
-EGM resolutions, and MOA extracts.
 ```
 
-## 3. Gemini Verification Prompt
+---
 
-Used to validate LLM connectivity and end-to-end behavior:
+## 2. Designing the System
 
-```text
-Check whether Gemini LLM is working and whether the model is properly working
-end to end inside the pipeline.
-
-Verify:
-- direct LLM JSON response
-- pipeline execution against sample docs
-- model configuration problems
-- quota or API failures
-
-If Gemini is not usable live, make the pipeline degrade gracefully and state the
-exact reason honestly.
 ```
 
-## 4. Documentation Prompt
+i want to build a pipeline for this
 
-Used for final repo packaging:
+something like:
 
-```text
-Create:
-- a complete README.md with proper detail
-- a prompt log
-- a handwritten-style system design explanation
+* read documents
+* classify them
+* extract data using LLM
+* combine into events
+* output table
 
-The README should explain the problem, architecture, dataset, setup, run steps,
-Gemini status, output, and assignment mapping.
+can you suggest a clean python structure for this? not too overcomplicated but still modular
+
 ```
 
-## How These Prompts Were Used
+---
 
-- The first prompt drove code hardening and bug fixing.
-- The second prompt drove generation of a realistic but clean sample dataset.
-- The third prompt was used to verify actual Gemini runtime behavior, not just code structure.
-- The fourth prompt was used to package the repo into a submission-ready state.
+## 3. Data Modeling
 
-## Important Note
+```
 
-The final implementation was not accepted blindly from prompts. It was iteratively checked by:
+help me define pydantic models for this
 
-- reading the current codebase
-- inspecting runtime failures
-- patching minimal targeted fixes
-- running the pipeline locally
-- validating the resulting CSV output
+i need:
+
+* raw document
+* extracted fields (with some evidence text maybe?)
+* final capital change event
+
+also how to handle null values properly in this case?
+
+```
+
+---
+
+## 4. LLM Selection (Initial Confusion)
+
+```
+
+which LLM should i use for structured extraction?
+
+i need:
+
+* good JSON output
+* less hallucination
+* cheap/free ideally
+
+compare gemini vs groq (llama/mixtral etc)
+
+```
+```
+
+im using gemini rn but:
+
+* hitting quota issues
+* output format sometimes messy
+
+is groq better for this kind of task??
+
+```
+
+---
+
+## 5. Switching to Groq
+
+```
+
+ok lets switch to groq
+
+can you help me write a python function to call groq api
+
+i just want:
+
+* input prompt
+* output json
+
+also handle cases where output is not clean json (this is happening sometimes)
+
+```
+```
+
+groq output sometimes has extra text before/after json
+
+how to safely extract only json part from response??
+
+```
+
+---
+
+## 6. Extraction Prompt Engineering
+
+```
+
+write a prompt to extract authorised share capital changes from documents
+
+IMPORTANT:
+
+* output should be STRICT JSON
+* dont guess values
+* if not present → return null
+* include some evidence text also
+
+fields:
+date, old capital, new capital, shares etc
+
+```
+```
+
+the model is still hallucinating sometimes
+
+can you make the prompt stricter? like explicitly say "only extract if clearly mentioned"
+
+```
+
+---
+
+## 7. Document Classification
+
+```
+
+write a function to classify docs into:
+SH7, PAS3, BOARD_RESOLUTION, EGM, MOA
+
+i think rule based should work (keywords etc), fallback to LLM only if unsure
+
+```
+
+---
+
+## 8. Event Building (Merging Logic)
+
+```
+
+i have extracted data from multiple docs
+
+how do i merge them into ONE event??
+
+requirements:
+
+* group by date
+* combine sources
+* handle conflicts
+* prefer SH7 values over others
+
+```
+```
+
+my grouping logic is kinda wrong rn, its mixing events together
+
+how do i fix grouping so that separate events dont get merged??
+maybe use date + something else?
+
+```
+
+---
+
+## 9. Validation Layer
+
+```
+
+write a function to validate final event
+
+i need:
+
+* missing fields detection
+* confidence score
+
+logic:
+high → multiple docs agree
+medium → only 1 source
+low → conflicts
+
+```
+```
+
+improve confidence logic a bit
+
+like if 3+ docs support same value then definitely high confidence
+
+```
+
+---
+
+## 10. Output Generation
+
+```
+
+convert final events into pandas dataframe
+
+columns:
+date, old capital, new capital, sources, confidence, notes
+
+save as csv also
+
+```
+
+---
+
+## 11. Pipeline Integration
+
+```
+
+write main.py which runs everything:
+
+* load docs
+* classify
+* extract
+* filter relevant ones
+* group + merge
+* validate
+* sort timeline
+* output final table
+
+```
+
+---
+
+## 12. Debugging and Fixes
+
+```
+
+fix this error:
+ModuleNotFoundError: No module named 'dotenv'
+
+```
+```
+
+llm output is not valid json sometimes
+
+can you help me safely parse it without crashing??
+
+```
+```
+
+my pipeline crashes when some fields are missing
+
+how to handle null values properly in pydantic??
+
+```
+```
+
+some extracted values look wrong
+
+is this prompt issue or model issue??
+how to reduce hallucination here??
+
+```
+```
+
+csv is generating but some columns are empty
+
+not sure if issue is extraction or merging logic
+
+how do i debug this??
+
+```
+```
+
+add some logging pls
+
+i want to see:
+
+* classification output
+* extracted data
+* grouped events
+* final results
+
+```
+
+---
+
+## 13. Final Review
+
+```
+
+can you review my overall design?
+
+mainly:
+
+* is it robust enough
+* am i handling missing data properly
+* does this look like production level or too hacky
+
+```
+
+---
+
+## Final Note
+
+```
+
+initially i used gemini for this but ran into quota limits + inconsistent formatting issues
+
+switched to groq later which was faster and more stable for json outputs
+
+a lot of time went into debugging parsing issues and fixing grouping logic
+
+final system is a mix of LLM extraction + deterministic python logic for merging and validation
+
+```
+```
+
+---
+
+If you want next, I can help you with:
+
+* README (this matters more than you think)
+* system design doc (this is what they AI-check heavily)

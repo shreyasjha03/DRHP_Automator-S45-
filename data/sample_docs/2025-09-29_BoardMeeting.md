@@ -1,13 +1,13 @@
 # Board Resolution - Approval of Major Capital Increase
 
 **Company:** Apex Corporation Private Limited
-**Date of Board Meeting:** 20/09/2025
+**Date of Board Meeting:** 29/09/2025
 
 ## Resolution: Approval of Significant Increase in Authorized Share Capital
 
-The Board of Directors of Apex Corporation Private Limited, at their meeting held on 20/09/2025, hereby approves the proposal to significantly increase the Authorized Share Capital of the company and recommend the same to the members for approval at the Annual General Meeting scheduled for 29/09/2025.
+The Board of Directors of Apex Corporation Private Limited, at their meeting held on 29/09/2025, hereby approves the proposal to significantly increase the Authorized Share Capital of the company and recommend the same to the members for approval at the Annual General Meeting held on 29/09/2025.
 
-### Current Authorized Capital (As on 20/09/2025)
+### Current Authorized Capital (As on 29/09/2025)
 **Authorized Share Capital:** Rs. 3,00,000 (Rupees Three Lakhs)
 - Divided into 20,000 Equity Shares of Rs. 10 each
 - AND 10,000 Preference Shares of Rs. 10 each

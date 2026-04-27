@@ -9,7 +9,7 @@
 
 The Board of Directors of Apex Corporation Private Limited, at their meeting held on 01/01/2015, hereby approves and confirms the Authorized Share Capital of the company as follows:
 
-**Existing Authorized Capital:** Nil (At Incorporation)
+**Existing Authorized Capital:** Rs. 0 (At Incorporation)
 
 **Authorized Share Capital Structure:**
 - Rupees One Lakh (Rs. 1,00,000) only

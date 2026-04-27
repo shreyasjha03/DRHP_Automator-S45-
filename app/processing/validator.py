@@ -16,9 +16,12 @@ def validate_event(event):
     if event.conflicts:
         event.confidence = "low"
         notes.append("Conflicting values detected across source documents.")
-    elif len(event.sources) > 1:
+    elif len(event.sources) >= 3:
         event.confidence = "high"
-        notes.append("Multiple matching sources support this event.")
+        notes.append("Three or more supporting sources agree on the event.")
+    elif len(event.sources) == 2:
+        event.confidence = "medium"
+        notes.append("Two supporting sources confirm the event.")
     else:
         event.confidence = "medium"
         notes.append("Derived from a single source document.")

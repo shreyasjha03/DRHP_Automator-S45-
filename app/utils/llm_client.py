@@ -86,11 +86,11 @@ def _call_llm(prompt: str, model: str) -> str:
 
 def call_llm(prompt: str, retries: int = 2, model: Optional[str] = None) -> Dict[str, Any]:
     if not _API_KEY:
-        logger.warning("GROQ_API_KEY is not configured. Returning empty payload.")
+        logger.debug("GROQ_API_KEY is not configured. Returning empty payload.")
         return {}
 
     if not client:
-        logger.warning("Groq SDK is unavailable. Returning empty payload.")
+        logger.debug("Groq SDK is unavailable. Returning empty payload.")
         return {}
 
     model_candidates = []
@@ -111,7 +111,7 @@ def call_llm(prompt: str, retries: int = 2, model: Optional[str] = None) -> Dict
                     return payload
 
                 last_error = ValueError("LLM returned invalid JSON")
-                logger.warning(
+                logger.debug(
                     "Invalid JSON from Groq model %s on attempt %s/%s",
                     model_name,
                     attempt + 1,
@@ -120,20 +120,19 @@ def call_llm(prompt: str, retries: int = 2, model: Optional[str] = None) -> Dict
             except Exception as exc:  # pragma: no cover - network/SDK failures
                 last_error = exc
                 error_text = str(exc)
-                logger.warning(
-                    "Groq call failed for model %s on attempt %s/%s: %s",
+                logger.debug(
+                    "Groq call failed for model %s on attempt %s/%s",
                     model_name,
                     attempt + 1,
                     retries + 1,
-                    exc,
                 )
 
                 if "404" in error_text or "not found" in error_text.lower():
-                    logger.warning("Switching Groq model fallback after unsupported model: %s", model_name)
+                    logger.debug("Switching Groq model fallback after unsupported model: %s", model_name)
                     break
 
             if attempt < retries:
                 time.sleep(0.5 * (attempt + 1))
 
-    logger.error("Groq call exhausted retries: %s", last_error)
+    logger.debug("Groq call exhausted retries, using fallback response")
     return {}

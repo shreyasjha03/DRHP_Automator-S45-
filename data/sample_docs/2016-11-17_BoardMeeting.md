@@ -1,11 +1,11 @@
 # Board Resolution - Approval of Capital Increase
 
 **Company:** Apex Corporation Private Limited
-**Date of Board Meeting:** 10/11/2016
+**Date of Board Meeting:** 17/11/2016
 
 ## Resolution: Approval of Increase in Authorized Share Capital
 
-The Board of Directors of Apex Corporation Private Limited, at their meeting held on 10/11/2016, hereby approves the proposal to increase the Authorized Share Capital of the company and recommend the same to the members for approval at the Extra-ordinary General Meeting.
+The Board of Directors of Apex Corporation Private Limited, at their meeting held on 17/11/2016, hereby approves the proposal to increase the Authorized Share Capital of the company and recommend the same to the members for approval at the Extra-ordinary General Meeting.
 
 ### Current Authorized Capital (As on 10/11/2016)
 **Authorized Share Capital:** Rs. 1,00,000 (Rupees One Lakh)

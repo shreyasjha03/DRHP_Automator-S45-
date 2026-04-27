@@ -52,7 +52,8 @@ def main():
             if extracted.event_type.value:
                 extracted_records.append(extracted)
         except Exception as exc:
-            logger.error(f"  ✗ Failed to process {doc.source_file}")
+            logger.error(f"  ✗ Failed to process {doc.source_file}: {exc}")
+            logger.debug("Processing exception for %s", doc.source_file, exc_info=exc)
 
     if not extracted_records:
         logger.warning("No extractable events found.")
