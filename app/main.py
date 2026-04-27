@@ -14,25 +14,34 @@ from app.processing.timeline import build_timeline
 from app.output.generator import generate_output
 
 
+# Suppress verbose logging from external libraries
+logging.getLogger("groq").setLevel(logging.WARNING)
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
+
 logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+    level=logging.INFO,
+    format="%(levelname)s: %(message)s",
 )
 logger = logging.getLogger(__name__)
 
 
 def main():
+    logger.info("🔍 Loading documents...")
     docs = load_documents("data/sample_docs")
     if not docs:
-        logger.warning("No documents found. Writing empty result set.")
+        logger.warning("No documents found.")
         df = generate_output([])
         print(df.to_string(index=False))
         return df
+    
+    logger.info(f"✓ Loaded {len(docs)} documents")
 
     extracted_records = []
 
-    for doc in docs:
+    for i, doc in enumerate(docs, 1):
         try:
+            logger.info(f"📄 Processing [{i}/{len(docs)}] {doc.source_file}...")
             classification = classify_document(doc.content)
             doc.type = classification.get("document_type", "UNKNOWN")
 
@@ -42,43 +51,42 @@ def main():
 
             if extracted.event_type.value:
                 extracted_records.append(extracted)
-            else:
-                logger.debug("Skipping document without event_type: %s", doc.source_file)
         except Exception as exc:
-            logger.exception("Failed to process document %s: %s", doc.source_file, exc)
+            logger.error(f"  ✗ Failed to process {doc.source_file}")
 
     if not extracted_records:
-        logger.warning("No extractable events found. Writing empty result set.")
+        logger.warning("No extractable events found.")
         df = generate_output([])
         print(df.to_string(index=False))
         return df
 
+    logger.info(f"✓ Extracted {len(extracted_records)} events from documents")
+    
+    logger.info("📊 Grouping events by date...")
     grouped = group_by_date(extracted_records)
 
     events = []
     for key, records in grouped.items():
         try:
-            logger.debug("Building grouped event for %s", key)
             event = build_event(records)
             event = validate_event(event)
             events.append(event)
         except Exception as exc:
-            logger.exception("Failed to build event for group %s: %s", key, exc)
+            logger.error(f"  ✗ Failed to build event for group {key}")
 
+    logger.info(f"✓ Built {len(events)} event groups")
+    
+    logger.info("⏱️  Building timeline...")
     timeline = build_timeline(events)
-    logger.debug(
-        "Final events: %s",
-        [
-            event.model_dump() if hasattr(event, "model_dump") else event.dict()
-            for event in timeline
-        ],
-    )
 
+    logger.info("📝 Generating output...")
     df = generate_output(timeline)
-    if df.empty:
-        print(df.to_string(index=False))
-    else:
-        print(df.to_string(index=False))
+    
+    logger.info("✅ Pipeline complete!")
+    print("\n" + "="*80)
+    print(df.to_string(index=False))
+    print("="*80 + "\n")
+    
     return df
 
 
