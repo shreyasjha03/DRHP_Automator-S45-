@@ -16,12 +16,12 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 _API_KEY = os.getenv("GROQ_API_KEY")
-_DEFAULT_MODEL = os.getenv("GROQ_MODEL", "llama-3.1-70b-versatile")
+_DEFAULT_MODEL = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
 _MODEL_FALLBACKS = [
     _DEFAULT_MODEL,
-    "llama-3.1-70b-versatile",
     "llama-3.1-8b-instant",
-    "gemma-7b-it",
+    "llama3-70b-8000-token-preview",
+    "llama-3.2-3b-preview",
 ]
 
 client = Groq(api_key=_API_KEY) if Groq and _API_KEY else None
