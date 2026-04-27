@@ -5,9 +5,6 @@
 This file documents the prompts I used while building the DRHP capital structure extraction system.  
 These were written over time while understanding the problem, building the pipeline, and debugging issues.
 
----
-
-## 1. Understanding the Problem
 
 ```
 
@@ -23,9 +20,6 @@ also what to do if some values are missing or dont match??
 
 ```
 
----
-
-## 2. Designing the System
 
 ```
 
@@ -43,10 +37,6 @@ can you suggest a clean python structure for this? not too overcomplicated but s
 
 ```
 
----
-
-## 3. Data Modeling
-
 ```
 
 help me define pydantic models for this
@@ -60,10 +50,6 @@ i need:
 also how to handle null values properly in this case?
 
 ```
-
----
-
-## 4. LLM Selection (Initial Confusion)
 
 ```
 
@@ -89,9 +75,7 @@ is groq better for this kind of task??
 
 ```
 
----
 
-## 5. Switching to Groq
 
 ```
 
@@ -115,9 +99,7 @@ how to safely extract only json part from response??
 
 ```
 
----
 
-## 6. Extraction Prompt Engineering
 
 ```
 
@@ -142,9 +124,6 @@ can you make the prompt stricter? like explicitly say "only extract if clearly m
 
 ```
 
----
-
-## 7. Document Classification
 
 ```
 
@@ -155,9 +134,6 @@ i think rule based should work (keywords etc), fallback to LLM only if unsure
 
 ```
 
----
-
-## 8. Event Building (Merging Logic)
 
 ```
 
@@ -182,9 +158,7 @@ maybe use date + something else?
 
 ```
 
----
 
-## 9. Validation Layer
 
 ```
 
@@ -209,9 +183,7 @@ like if 3+ docs support same value then definitely high confidence
 
 ```
 
----
 
-## 10. Output Generation
 
 ```
 
@@ -224,9 +196,6 @@ save as csv also
 
 ```
 
----
-
-## 11. Pipeline Integration
 
 ```
 
@@ -243,9 +212,7 @@ write main.py which runs everything:
 
 ```
 
----
-
-## 12. Debugging and Fixes
+## (Errors Encountered)
 
 ```
 
@@ -297,9 +264,6 @@ i want to see:
 
 ```
 
----
-
-## 13. Final Review
 
 ```
 
@@ -312,8 +276,6 @@ mainly:
 * does this look like production level or too hacky
 
 ```
-
----
 
 ## Final Note
 
@@ -330,9 +292,3 @@ final system is a mix of LLM extraction + deterministic python logic for merging
 ```
 ```
 
----
-
-If you want next, I can help you with:
-
-* README (this matters more than you think)
-* system design doc (this is what they AI-check heavily)
