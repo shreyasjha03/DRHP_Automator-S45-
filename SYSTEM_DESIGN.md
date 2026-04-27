@@ -2,121 +2,91 @@
 
 ## Objective
 
-Build a system that can read corporate filings and draft an authorised share capital change table for DRHP preparation. The key requirement is document reconciliation and evidence transparency, not just number extraction.
+Create a way to review business filings and produce an authorised share capital change table to assist in drafting DRHPs. While it would be great to have a high level of extraction accuracy for this system, there is another layer of importance: being honest about what you know and don't know. Every single line item needs to be able to be tied back to the source documents. Uncertainty or ambiguity needs to be shown instead of assumed away.
 
-## Problem framing
 
-An authorised capital change is usually captured across multiple documents:
+## How I Viewed This as an Event Reconstruction Task
 
-- SH-7 filed with the ROC
-- board resolution approving the proposal
-- notice of EGM or AGM
-- EGM/AGM minutes
-- amended MOA
+Instead of viewing this as extracting information out of a single document, I viewed this as reconstructing an event based upon information extracted from multiple documents. A company authorises an increase in their issued and outstanding shares over several records including: the board resolution, the EGM notice to members, the EGM resolution adopted by the members, the amended articles of association (MOA), and the SH-7 filed with the ROC.
 
-The right design is to treat the task as event reconstruction rather than as single-document extraction.
+Each record contains overlapping data, however, no two documents are identical. Many records will include the date(s) associated with the increase in authorised shares, however, none will include the final amount of authorised shares. Some records will include the newly created section of the articles which lists the new authorised amount of shares, however, many records do not provide explicit details regarding the previous authorised amount of shares. Additionally, some records may carry more weight than others.
 
-## Core fields to capture
+Therefore, the correct method to implement would be to extract partial facts from each document and create a merged document representing a single event in time. Using a single filing as definitive is incorrect.
 
-For each capital change event:
 
-- date
-- event type
-- old authorised capital
-- new authorised capital
-- old number of shares
-- new number of shares
-- face value per share
-- source documents used
-- confidence score
-- notes on missing or conflicting evidence
+## Why I Didn't Just Point an LLM at All My Documents and Ask for JSON Back
 
-The final table collapses this into the DRHP-friendly fields, but the pipeline keeps richer source internally.
+While it is attractive to point an LLM at all my documents and then request JSON output, this is also brittle for a number of reasons. API quotas can cause your pipeline to fail partway through. Models and/or routes can change within a given SDK version. Structured legal filings such as SH-7 follow specific patterns that can be easily identified using regex, and thus can be more accurately extracted than with an LLM.
 
-## Modular pipeline design
+Ultimately, I chose a hybrid solution:
 
-The system is organized into layers:
+- Use classification heuristics to identify obvious document types
+- Use deterministic extraction techniques to extract capital-change language where possible (i.e., where there is a known/standardised structure)
+- Use Groq only if necessary (where the document cannot be processed via regex)
 
-1. ingestion
-2. classification
-3. deterministic extraction + LLM fallback
-4. event grouping
-5. conflict resolution and validation
-6. output generation
+This creates a much simpler process for explaining and debugging the system.
 
-That keeps the code clean and makes failure points easy to isolate.
 
-## LLM design choice
+## Why Groq
 
-The project now uses **Groq** as the primary LLM integration.
+The project began with Gemini. During testing, I ran into a few issues. First, the model name I had set up was not valid for the SDK route I was using. Then, I found out that the API project had hit its quota limit. And to make things more complicated, the JSON output was not consistent across different calls.
 
-Why Groq?
+Groq was a better fit for this pipeline:
 
-- more stable structured JSON output in the current environment
-- the API is easier to integrate with the current Python SDK
-- it is better suited to fallback extraction when deterministic parsing does not apply
+- faster inference
+- more stable structured output
+- simpler Python SDK integration
 
-The pipeline does not rely on Groq for every document. It first uses deterministic pattern extraction for strongly structured records, then falls back to Groq only when the document is less explicit.
+The pipeline is set up in a way that makes Groq optional. If you don't have an API key, the system will still work but it will only use deterministic extraction.
 
-## Extraction strategy
 
-- use rule-based classification for obvious document types
-- use regex extraction for strong capital-change language
-- fallback to Groq for documents that still need parsing
-- normalize values through Pydantic models
-- preserve evidence text and line numbers when available
+## Event Building Logic
 
-This hybrid approach reduces hallucination and makes the output more defensible.
+The output row represents a capital change event, not a document. So I grouped the extracted records by date and event type, then merged all the documents in each group together.
 
-## Event building logic
+When multiple records disagreed, I did not silently overwrite values. Instead:
 
-Events are built from grouped records, not from individual documents.
+- conflicts are recorded explicitly
+- confidence drops to LOW
+- a preferred source is chosen using a simple rule: SH7 first, then PAS3, then all others
 
-Grouping keys:
+This is important because a DRHP drafting assistant should not invent certainty where the underlying filings disagree. The reviewer needs to know what is verified and what is not.
 
-- `date`
-- `event_type`
 
-Merge rules:
+## Handling Missing Information
 
-- prefer `SH7` values over others
-- record conflicting values instead of overwriting silently
-- maintain a list of source documents and evidence line numbers
+In legal and compliance workflows, it is common to come across missing values. For instance, one attachment might only include the revised capital clause, while another might only show the meeting date. The system should be able to handle this and not crash just because a field is missing from one document.
 
-## Confidence scoring
+To handle this:
 
-- `high` when three or more supporting documents agree
-- `medium` when one or two sources support the event
-- `low` when there are conflicts across sources
+- Pydantic models allow nulls throughout
+- extraction functions return safe defaults
+- missing fields are collected explicitly per event
+- the output notes explain what the system could not confirm
 
-Missing field detection is explicit and is reflected in the output notes.
+This decision was made on purpose. If we had filled in the missing information with guesses, the table would look nicer, but it would not be entirely truthful.
 
-## Handling missing or conflicting data
 
-The system is designed to be honest about uncertainty:
+## Sample Dataset Design
 
-- missing fields are allowed and tracked explicitly
-- if a value cannot be confirmed, the event is still built but marked appropriately
-- conflicts are surfaced in notes rather than hidden
+The dataset covers one company across five capital change events, with each event supported by multiple documents. The documents are designed to include a range of scenarios:
 
-This is critical for a DRHP drafting assistant, because the reviewer must know what is verified and what is uncertain.
+- clean events where all sources agree (HIGH confidence)
+- events with a single supporting document (MEDIUM confidence)
+- events with date or value conflicts across sources (LOW confidence)
 
-## Sample dataset design
+This makes sure the pipeline is tested on its ability to handle problems, not just straightforward situations where the information is easy to extract.
 
-The sample documents were created to show both normal and edge-case behavior:
 
-- clean SH-7 events with supporting attachments
-- missing fields in one or more documents
-- conflicting values across attachments
-- preference share introduction event
+## If I Had More Time
 
-This helps verify that the pipeline is not just extracting numbers, but is also handling real-world document ambiguity.
+1. Add unit tests for the extraction functions and merge rules
+2. Normalize all dates to ISO format before grouping
+3. Add per-field provenance rather than just event-level source aggregation
+4. Extend the event model to cover share allotments using PAS-3 documents
+5. Separate official filing detection from document-type classification more cleanly
 
-## Practical behavior
 
-The pipeline now writes two outputs:
+## Final Thought
 
-- `data/outputs/result.csv` for the structured table
-- `data/outputs/CAPITAL_STRUCTURE.md` for event-level narrative and provenance
-
-This makes it easy to inspect both the raw extract and the reasoned summary.
+What really matters here is not just about a model being able to extract a number from a document. It is about how the system acts when documents don't match up, contradict each other, or can't be understood. I set up the pipeline so it can still create a useful DRHP drafting table even in those tough situations, and it is clear about what it is based on and where it is unsure.
